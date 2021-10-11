@@ -1,0 +1,131 @@
+archetype a2(
+  admin  : address
+)
+
+variable users : big_map<address, nat> = []
+
+record transferlist {
+  unrestricted         : bool;
+  allowedTransferlists : set<nat>;
+}
+variable transferlists : big_map<nat, transferlist> = []
+
+variable superusers : set<address> = []
+
+entry addSuperuser (su : address) {
+  called by admin
+  effect {
+    superusers.add(su)
+  }
+}
+
+entry removeSuperuser (su : address) {
+  called by admin
+  effect {
+    superusers.remove(su)
+  }
+}
+
+function assertReceiver(addr : address) : bool {
+  return
+    match users.getopt(addr) with
+    | some v ->
+        match transferlists.getopt(v) with
+        | some(r) -> r.unrestricted
+        | none -> false
+        end
+    | none   -> false
+    end
+}
+
+entry assertReceivers (addrs : list<address>) {
+  for addr in addrs do
+    dorequire(assertReceiver(addr), "USER_RESTRICTED")
+  done
+}
+
+entry assertTransfers (input_list : list<address * list<address>>) {
+  for input_item in input_list do
+    var %from = input_item[0];
+    var tos   = input_item[1];
+    for %to in tos do
+      if not superusers.contains(source)
+      then begin
+        dorequire(assertReceiver(%from), "FROM_RESTRICTED");
+        dorequire(assertReceiver(%to), "TO_RESTRICTED");
+        var fromid       = users[%from];
+        var toid         = users[%to];
+        var allowedlists = transferlists[fromid].allowedTransferlists;
+        dorequire(allowedlists.contains(toid), "TO_NOT_ALLOWED")
+      end
+      else
+        dorequire(users.contains(%from), "FROM_NOT_WHITELISTED");
+        dorequire(users.contains(%to), "TO_NOT_WHITELISTED");
+    done
+  done
+}
+
+entry assertTransferlist (fromTransferListId : nat, toTransferListId : nat) {
+  dorequire(transferlists.contains(fromTransferListId) = true, "FROM_TRANSFERLIST_NOT_FOUND");
+  dorequire(transferlists.contains(toTransferListId) = true, "TO_TRANSFERLIST_NOT_FOUND");
+  dorequire(transferlists[fromTransferListId].unrestricted = true, "FROM_INVALID_UNRESTRICTED_STATE");
+  dorequire(transferlists[toTransferListId].unrestricted = true, "TO_INVALID_UNRESTRICTED_STATE");
+  dorequire(transferlists[fromTransferListId].allowedTransferlists.contains(toTransferListId) = true, "TO_TRANSFERLIST_NOT_FOUND_IN_FROM");
+}
+
+entry updateUser (user : address, transferlistId : option<nat>) {
+  called by admin
+  effect {
+    users.update(user, transferlistId)
+  }
+}
+
+entry updateUsers (utl : list<address * option<nat>>) {
+  called by admin
+  effect {
+    for i in utl do
+      var user = i[0];
+      var transferlistId = i[1];
+      users.update(user, transferlistId)
+    done
+  }
+}
+
+entry updateTransferlist (
+    transferlistId : nat,
+    u : option<(bool * set<nat>)>) {
+  called by admin
+  effect {
+    match u with
+    | some v -> begin
+      var lunrestricted          = v[0];
+      var lallowTransferlists    = v[1];
+      var ltransferlist =
+       match transferlists.getopt(transferlistId) with
+      | some (v) -> {v with unrestricted = lunrestricted}
+      | none     -> {unrestricted = lunrestricted; allowedTransferlists = []}
+      end;
+      for a in lallowTransferlists do
+        ltransferlist.allowedTransferlists.add(a)
+      done;
+      transferlists.put(transferlistId, ltransferlist)
+      end
+    | none -> transferlists.remove(transferlistId)
+    end
+  }
+}
+
+entry setAdmin (value : address) {
+  called by admin
+  effect {
+    admin := value;
+  }
+}
+
+getter getAdmin () : address {
+  return admin
+}
+
+getter getUser (user : address) : option<nat> {
+  return users.getopt(user)
+}
