@@ -1,0 +1,18 @@
+@startuml
+start
+if (from in restricted list?) then (yes)
+    #pink:error: FROM_RESTRICTED;
+    kill
+elseif (to in restricted list?) then (yes)
+    #pink:error: TO_RESTRICTED;
+    kill
+elseif (is sender a super user ?) then (yes)
+    #palegreen:transfer is valid;
+    stop
+elseif (is TO transfer list in FROM allowed lists ?) then (yes)
+    #palegreen:transfer is valid;
+    stop
+else (no)
+    #pink:error: TO_NOT_ALLOWED;
+    kill
+@enduml

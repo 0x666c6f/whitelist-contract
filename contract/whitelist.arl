@@ -49,18 +49,15 @@ entry assertTransfers (input_list : list<address * list<address>>) {
     var %from = input_item[0];
     var tos   = input_item[1];
     for %to in tos do
+    dorequire(assertReceiver(%from), "FROM_RESTRICTED");
+    dorequire(assertReceiver(%to), "TO_RESTRICTED");
       if not superusers.contains(source)
       then begin
-        dorequire(assertReceiver(%from), "FROM_RESTRICTED");
-        dorequire(assertReceiver(%to), "TO_RESTRICTED");
         var fromid       = users[%from];
         var toid         = users[%to];
         var allowedlists = transferlists[fromid].allowedTransferlists;
         dorequire(allowedlists.contains(toid), "TO_NOT_ALLOWED")
       end
-      else
-        dorequire(users.contains(%from), "FROM_NOT_WHITELISTED");
-        dorequire(users.contains(%to), "TO_NOT_WHITELISTED");
     done
   done
 }

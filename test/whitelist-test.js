@@ -12,24 +12,23 @@ const {
 
 setQuiet("true");
 
-const mockup_mode = true;
+const mockup_mode = false;
 
-setEndpoint(mockup_mode ? 'mockup' : 'https://testnet-tezos.giganode.io/')
 
 // contracts
 let whitelist;
 
 // accounts
-const superUser = getAccount(mockup_mode ? 'alice' : "ubisoft_admin");
-const whitelister = getAccount(mockup_mode ? 'bob' : "ubisoft_whitelister");
+const superUser = getAccount(mockup_mode ? 'alice' : "alice");
+const whitelister = getAccount(mockup_mode ? 'bob' : "bob");
 const carl = getAccount(mockup_mode ? 'carl' : "carl");
 const daniel = getAccount(mockup_mode ? 'daniel' : "daniel");
 const eddy = getAccount(mockup_mode ? 'eddy' : "eddy");
-const list0User1 = getAccount(mockup_mode ? 'bootstrap1' : "list0User1");
-const list0User2 = getAccount(mockup_mode ? 'bootstrap2' : "list0User2");
-const list1User1 = getAccount(mockup_mode ? 'bootstrap3' : "list1User1");
-const list1User2 = getAccount(mockup_mode ? 'bootstrap4' : "list1User2");
-const list2User1 = getAccount(mockup_mode ? 'bootstrap5' : "list2User1");
+const list0User1 = getAccount(mockup_mode ? 'flo' : "flo");
+const list0User2 = getAccount(mockup_mode ? 'gary' : "gary");
+const list1User1 = getAccount(mockup_mode ? 'hugo' : "hugo");
+const list1User2 = getAccount(mockup_mode ? 'ian' : "ian");
+const list2User1 = getAccount(mockup_mode ? 'jacky' : "jacky");
 
 describe("Deploy & init", async () => {
     it("Deploy Whitelist", async () => {
@@ -358,7 +357,7 @@ describe("Assert transfers", async () => {
         }, errors.FROM_RESTRICTED)
     });
 
-    it("Assert transfers [FROM: retricted, TO: not whitelisted] should fail", async () => {
+    it("Assert transfers [FROM: restricted, TO: not whitelisted] should fail", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
@@ -369,7 +368,7 @@ describe("Assert transfers", async () => {
         }, errors.FROM_RESTRICTED)
     });
 
-    it("Assert transfers [FROM: not whitelisted, TO: retricted] should fail", async () => {
+    it("Assert transfers [FROM: not whitelisted, TO: restricted] should fail", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
@@ -380,7 +379,7 @@ describe("Assert transfers", async () => {
         }, errors.FROM_RESTRICTED)
     });
 
-    it("Assert transfers [FROM: whitelisted unrestricted, TO: retricted] should fail", async () => {
+    it("Assert transfers [FROM: whitelisted unrestricted, TO: restricted] should fail", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
@@ -422,7 +421,7 @@ describe("Assert transfers", async () => {
         });
     });
 
-    it("Assert transfers [FROM: not whitelist, TO: not whitelisted, SENDER: SUPERUSER] should fail", async () => {
+    it("Assert transfers [FROM: not whitelisted, TO: not whitelisted, SENDER: SUPERUSER] should fail", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
@@ -433,7 +432,7 @@ describe("Assert transfers", async () => {
         }, errors.FROM_NOT_WHITELISTED)
     });
 
-    it("Assert transfers [FROM: not whitelist, TO: not whitelisted, SENDER: SUPERUSER] should fail", async () => {
+    it("Assert transfers [FROM: whitelisted, TO: not whitelisted, SENDER: SUPERUSER] should fail", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
@@ -466,22 +465,27 @@ describe("Assert transfers", async () => {
         }, errors.FROM_NOT_WHITELISTED)
     });
 
-    it("Assert transfers [FROM: restricted, TO: not in FROM allowed list, SENDER: SUPERUSER] should succeed", async () => {
-        await whitelist.assertTransfers({
-            arg: {
-                input_list: [[carl.pkh, [list1User2.pkh]]]
-            },
-            as: superUser.pkh
-        });
+    it("Assert transfers [FROM: unrestricted, TO: not in FROM allowed list, SENDER: SUPERUSER] should succeed", async () => {
+        await expectToThrow(async () => {
+            await whitelist.assertTransfers({
+                arg: {
+                    input_list: [[carl.pkh, [list1User2.pkh]]]
+                },
+                as: superUser.pkh
+            });
+        }, errors.FROM_RESTRICTED)
     });
 
-    it("Assert transfers [FROM: restricted, TO: restriced, SENDER: SUPERUSER] should succeed", async () => {
-        await whitelist.assertTransfers({
-            arg: {
-                input_list: [[carl.pkh, [list2User1.pkh]]]
-            },
-            as: superUser.pkh
-        });
+    it("Assert transfers [FROM: unrestricted, TO: restricted, SENDER: SUPERUSER] should succeed", async () => {
+        await expectToThrow(async () => {
+            await whitelist.assertTransfers({
+                arg: {
+                    input_list: [[list1User2.pkh, [carl.pkh]]]
+                },
+                as: superUser.pkh
+            });
+        }, errors.TO_RESTRICTED)
+
     });
 
     it("Assert transfers [FROM: whitelisted unrestricted, TO: in FROM allowed list, , SENDER: SUPERUSER] should succeed", async () => {

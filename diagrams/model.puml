@@ -1,0 +1,18 @@
+@startuml
+map users {
+ [USER] => [TRANSFER LIST]
+ alice => 1
+ bob => 2
+}
+
+object super_users {
+ charly
+}
+
+map transfer_lists {
+ [ID] => [UNRESTRICTED, ALLOWED_LISTS]
+ 1 => True, [0,1]
+ 2 => True, [1,2]
+ 3 => False, [2]
+}
+@enduml
