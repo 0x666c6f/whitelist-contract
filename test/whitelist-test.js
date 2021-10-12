@@ -285,6 +285,34 @@ describe("Update transfer list", async () => {
 
         )
     });
+
+    it("Update existing transfer list with null to delete it as admin should succeed", async () => {
+        await whitelist.updateTransferlist({
+            arg: {
+                transferlistId: 3,
+                u: [true, [0]]
+            },
+            as: whitelister.pkh
+        });
+        const storage = await whitelist.getStorage();
+        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`3`), exprMichelineToJson(`nat'`));
+        assert(list.prim === "Pair"
+            && list.args.length === 2
+            && list.args[0].prim === "True"
+            && list.args[1].length === 1
+            && list.args[1][0].int === "0"
+        )
+        await whitelist.updateTransferlist({
+            arg: {
+                transferlistId: 3,
+                u: null
+            },
+            as: whitelister.pkh
+        });
+        const storage2 = await whitelist.getStorage();
+        list = await getValueFromBigMap(parseInt(storage2.transferlists), exprMichelineToJson(`3`), exprMichelineToJson(`nat'`));
+        assert(list === null)
+    });
 });
 
 describe("Remove super user", async () => {

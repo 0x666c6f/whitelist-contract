@@ -139,6 +139,7 @@ https://better-call.dev/granadanet/KT1R23DuJRzbPc9VCio9JhcZgaPh44oPHuBA/operatio
 |                    | Update non existing transfer list as admin with no allowed lists should succeed                                        | Success         | ✅ Done   |
 |                    | Update existing transfer list as admin with no allowed lists should succeed                                        | Success         | ✅ Done   |
 |                    | Update existing transfer list as admin should succeed                                        | Success         | ✅ Done   |
+|                    | Update existing transfer list with null to delete it as admin should succeed                                        | Success         | ✅ Done   |
 | Remove super user |                                                                        |                 |          |
 |                    | Remove super user in whitelist contract as non admin should fail                                       | Error: INVALID_CALLER         | ✅ Done   |
 |                    | Remove non existing super user from whitelist contract should succeed                                  | Success         | ✅ Done   |
