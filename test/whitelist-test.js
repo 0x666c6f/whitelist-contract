@@ -3,12 +3,15 @@ const {
     getAccount,
     setQuiet,
     expectToThrow,
-    setEndpoint,
+    getValueFromBigMap,
+    exprMichelineToJson
 } = require('@completium/completium-cli');
 
 const {
     errors
 } = require('./utils');
+
+const assert = require('assert');
 
 setQuiet("true");
 
@@ -61,6 +64,8 @@ describe("Set admin", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage()
+        assert(storage.admin === whitelister.pkh)
     });
 });
 
@@ -83,6 +88,8 @@ describe("Add super user", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage()
+        assert(storage.superusers.includes(superUser.pkh))
     });
 
     it("Add an already existing super user in whitelist contract as admin should succeed", async () => {
@@ -92,6 +99,8 @@ describe("Add super user", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage()
+        assert(storage.superusers.includes(superUser.pkh))
     });
 });
 
@@ -116,6 +125,9 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User1.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user.int === "0")
     });
 
     it("Update a non existing user in whitelist contract with no whitelist id as admin should succeed", async () => {
@@ -126,6 +138,9 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User2.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user === null)
     });
 
     it("Update an existing user in whitelist contract with whitelist id as admin should succeed", async () => {
@@ -136,6 +151,9 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User2.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user.int === "0")
     });
 });
 
@@ -159,6 +177,12 @@ describe("Update users", async () => {
             },
             as: whitelister.pkh
         });
+
+        const storage = await whitelist.getStorage();
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User1.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user.int === "0")
+        user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User2.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user === null)
     });
 
     it("Update existing users in whitelist contract as admin should succeed", async () => {
@@ -168,6 +192,11 @@ describe("Update users", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User1.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user.int === "1")
+        user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User2.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user.int === "1")
     });
 });
 
@@ -192,6 +221,16 @@ describe("Update transfer list", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`0`), exprMichelineToJson(`nat'`));
+        assert(list.prim === "Pair"
+            && list.args.length === 2
+            && list.args[0].prim === "False"
+            && list.args[1].length === 3
+            && list.args[1][0].int === "0"
+            && list.args[1][1].int === "2"
+            && list.args[1][2].int === "3"
+        )
     });
 
     it("Update non existing transfer list as admin with no allowed lists should succeed", async () => {
@@ -202,6 +241,13 @@ describe("Update transfer list", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`1`), exprMichelineToJson(`nat'`));
+        assert(list.prim === "Pair"
+            && list.args.length === 2
+            && list.args[0].prim === "True"
+            && list.args[1].length === 0
+        )
     });
 
     it("Update existing transfer list as admin with no allowed lists should succeed", async () => {
@@ -212,6 +258,13 @@ describe("Update transfer list", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`0`), exprMichelineToJson(`nat'`));
+        assert(list.prim === "Pair"
+            && list.args.length === 2
+            && list.args[0].prim === "True"
+            && list.args[1].length === 0
+        )
     });
 
     it("Update existing transfer list as admin should succeed", async () => {
@@ -222,6 +275,15 @@ describe("Update transfer list", async () => {
             },
             as: whitelister.pkh
         });
+        const storage = await whitelist.getStorage();
+        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`1`), exprMichelineToJson(`nat'`));
+        assert(list.prim === "Pair"
+            && list.args.length === 2
+            && list.args[0].prim === "True"
+            && list.args[1].length === 1
+            && list.args[1][0].int === "0"
+
+        )
     });
 });
 
@@ -239,21 +301,29 @@ describe("Remove super user", async () => {
     });
 
     it("Remove non existing super user from whitelist contract should succeed", async () => {
+        const storage = await whitelist.getStorage()
+        assert(!storage.superusers.includes(carl.pkh))
         await whitelist.removeSuperuser({
             arg: {
                 user: carl.pkh,
             },
             as: whitelister.pkh
         });
+        const storage2 = await whitelist.getStorage()
+        assert(!storage2.superusers.includes(carl.pkh))
     });
 
     it("Remove existing super user from whitelist contract should succeed", async () => {
+        const storage = await whitelist.getStorage()
+        assert(storage.superusers.includes(superUser.pkh))
         await whitelist.removeSuperuser({
             arg: {
                 user: superUser.pkh,
             },
             as: whitelister.pkh
         });
+        const storage2 = await whitelist.getStorage()
+        assert(!storage2.superusers.includes(superUser.pkh))
         await whitelist.addSuperuser({
             arg: {
                 user: superUser.pkh,

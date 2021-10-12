@@ -95,16 +95,7 @@ entry updateTransferlist (
   effect {
     match u with
     | some v -> begin
-      var lunrestricted          = v[0];
-      var lallowTransferlists    = v[1];
-      var ltransferlist =
-       match transferlists.getopt(transferlistId) with
-      | some (v) -> {v with unrestricted = lunrestricted}
-      | none     -> {unrestricted = lunrestricted; allowedTransferlists = []}
-      end;
-      for a in lallowTransferlists do
-        ltransferlist.allowedTransferlists.add(a)
-      done;
+      var ltransferlist = {unrestricted = v[0]; allowedTransferlists = v[1]};
       transferlists.put(transferlistId, ltransferlist)
       end
     | none -> transferlists.remove(transferlistId)
