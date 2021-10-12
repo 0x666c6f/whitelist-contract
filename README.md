@@ -1,5 +1,9 @@
 # Whitelist smart contract
 
+## Introduction
+This contract is an extension of the [A2 standard](https://tzip.tezosagora.org/proposal/tzip-15/). It allows to manage permissions regarding asset 
+transfers on-chain.
+
 ## Set up
 This whitelist contract is coded in [Archetype](https://docs.archetype-lang.org/).
 To be able to run the tests, you need to install the [Completium CLI](https://completium.com/docs/cli):
@@ -37,6 +41,7 @@ You can finally run the tests:
 ```bash
 > npm test
 ```
+
 ## How it works
 ```plantuml
 start
@@ -57,6 +62,59 @@ else (no)
     kill
 @enduml
 ```
+
+### Examples
+Consider the following examples extracted from the A2 standard.
+
+#### Users:
+* `"alice": 0`
+* `"bob": 0`
+* `"charlie": 1`
+* `"dan": 2`
+
+#### Transferlists:
+
+* `0: (unrestricted: True, allowedTransferlists: {0, 2})`
+* `1: (unrestricted: True, allowedTransferlists: {1})`
+* `2: (unrestricted: False, allowedTransferlists: {1, 2})`
+
+Then suppose the following call to assertTransfers were made:
+```
+assertTransfers
+{ Pair "alice" { "bob", "dan" }
+, Pair "bob" { "alice" }
+, Pair "charlie" { "charlie", "dan" }
+}
+```
+
+* `alice -> bob`: alice and bob are on the same transferlist (`0`), which contains itself in its `allowedTransferlists` and is `unrestricted`, so this succeeds
+* `alice -> dan`: alice is on a transferlist (`0`) that contains `dan's` transferlistId (`2`) in its `allowedTransferlists` and is `unrestricted`, but it fails because `dan`'s transferlist is restricted
+* `bob -> alice`: This succeeds by the same logic as `alice -> bob`: they're on the same `unrestricted` transferlist that contains its own transferlistId in its `allowedTransferlists`
+* `charlie -> charlie`: This succeeds since `charlie`'s transferlist is unrestricted and contains its own transferlistId in its `allowedTransferlists`
+* `charlie -> dan`: This fails because `dan`'s transferlist (`2`) is restricted
+
+Thus the above call to `assertTransfers` will fail.
+
+#### Super user:
+This implementation introduces a new feature: the `super user`. The `super user` has the ability to trigger a transfer between two addresses in whitelists
+not allowed to transfer between each other.  When the transfer is triggered by a super user, we only verify that the user list is not restriced.
+We do not verify the allowed transfer lists.
+> **It will only work if the address is not in a restricted whitelist**
+
+If we take back the data we used in the above example, and the following transfers:
+```
+assertTransfers triggered by super user
+{ Pair "charlie" { "charlie" }
+, Pair "alice" { "charlie" }
+, Pair "bob" { "dan" }
+, Pair "dan" { "charlie" }
+}
+```
+
+* `charlie -> charlie`: `charlie` is in transferlist (`1`), which is `unrestricted`, so this **succeeds** since it is triggered by the super user.
+* `alice -> charlie`: `alice` is on a transferlist (`0`) and `charlie` is in transferlist (`1`), both `unrestricted`, so this **succeeds**.
+* `bob -> dan`: `bob` is on a transferlist (`0`) and `dan` is in transferlist (`2`) which is `restricted`, so this **fails**
+* `dan -> charlie`: `bob` is on a transferlist (`0`) and `dan` is in transferlist (`2`) which is `restricted`, so this **fails**
 
 ## Model
 ```plantuml
