@@ -51,7 +51,7 @@ entry assertTransfers (input_list : list<address * list<address>>) {
     for %to in tos do
     dorequire(assertReceiver(%from), "FROM_RESTRICTED");
     dorequire(assertReceiver(%to), "TO_RESTRICTED");
-      if not superusers.contains(source)
+      if not superusers.contains(caller)
       then begin
         var fromid       = users[%from];
         var toid         = users[%to];
