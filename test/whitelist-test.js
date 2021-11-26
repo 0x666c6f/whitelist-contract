@@ -523,7 +523,7 @@ describe("Assert transfers", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
-                    input_list: [[daniel.pkh, [eddy.pkh]]]
+                    input_list: [[jacky.pkh, [eddy.pkh]]]
                 },
                 as: superUser.pkh
             });
@@ -534,7 +534,7 @@ describe("Assert transfers", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
-                    input_list: [[list1User2.pkh, [eddy.pkh]]]
+                    input_list: [[list1User2.pkh, [jacky.pkh]]]
                 },
                 as: superUser.pkh
             });
@@ -545,7 +545,7 @@ describe("Assert transfers", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
-                    input_list: [[carl.pkh, [eddy.pkh]]]
+                    input_list: [[carl.pkh, [jacky.pkh]]]
                 },
                 as: superUser.pkh
             });
@@ -556,7 +556,7 @@ describe("Assert transfers", async () => {
         await expectToThrow(async () => {
             await whitelist.assertTransfers({
                 arg: {
-                    input_list: [[eddy.pkh, [carl.pkh]]]
+                    input_list: [[jacky.pkh, [carl.pkh]]]
                 },
                 as: superUser.pkh
             });
