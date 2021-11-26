@@ -49,14 +49,9 @@ entry assertTransfers (input_list : list<address * list<address>>) {
     var %from = input_item[0];
     var tos   = input_item[1];
     for %to in tos do
-    dorequire(assertReceiver(%from), "FROM_RESTRICTED");
-    dorequire(assertReceiver(%to), "TO_RESTRICTED");
-      if not superusers.contains(caller)
-      then begin
-        var fromid       = users[%from];
-        var toid         = users[%to];
-        var allowedlists = transferlists[fromid].allowedTransferlists;
-        dorequire(allowedlists.contains(toid), "TO_NOT_ALLOWED")
+      match callview<string>(selfaddress, "assertTransfer", (%from, %to)) with
+      | some(v) ->  if v <> "" then fail(v)
+      | none -> fail("INTERNAL_ERROR")
       end
     done
   done
@@ -116,4 +111,35 @@ getter getAdmin () : address {
 
 getter getUser (user : address) : option<nat> {
   return users.getopt(user)
+}
+
+view assertTransfer (%from : address, %to : address) : string {
+  var res : string = "";
+  if not (match users.getopt(%from) with
+    | some v ->
+        match transferlists.getopt(v) with
+        | some(r) -> r.unrestricted
+        | none -> false
+        end
+    | none   -> false
+    end)
+  then res := "FROM_RESTRICTED"
+  else if not (match users.getopt(%to) with
+    | some v ->
+        match transferlists.getopt(v) with
+        | some(r) -> r.unrestricted
+        | none -> false
+        end
+    | none   -> false
+    end)
+  then res := "TO_RESTRICTED"
+  else if not superusers.contains(caller)
+  then begin
+    var fromid       = users[%from];
+    var toid         = users[%to];
+    var allowedlists = transferlists[fromid].allowedTransferlists;
+    if not allowedlists.contains(toid)
+    then res := "TO_NOT_ALLOWED"
+  end;
+  return res
 }

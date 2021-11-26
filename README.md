@@ -1,7 +1,7 @@
 # Whitelist smart contract
 
 ## Introduction
-This contract is an extension of the [A2 standard](https://tzip.tezosagora.org/proposal/tzip-15/). It allows to manage permissions regarding asset 
+This contract is an extension of the [A2 standard](https://tzip.tezosagora.org/proposal/tzip-15/). It allows to manage permissions regarding asset
 transfers on-chain.
 
 ## Set up
@@ -16,6 +16,12 @@ To run the tests, you have two options:
 * Testnets
 * Mockup mode
 
+To create and initialize the accounts required by the test scenario in mockup mode:
+```bash
+> ./setup-accounts.sh
+> completium-cli mockup init
+```
+
 To use the mockup mode, you need to have the `tezos-client` installed. You can find instructions on how to do that here: https://assets.tqtezos.com/docs/setup/1-tezos-client/
 
 To switch from Tesnet/Mockup mode, you can use the following command:
@@ -24,16 +30,19 @@ To switch from Tesnet/Mockup mode, you can use the following command:
 
 Current network: mockup
 Current endpoint: mockup
-? Switch endpoint … 
+? Switch endpoint …
 ▸ main       https://mainnet-tezos.giganode.io
   main       https://mainnet.smartpy.io
   main       https://rpc.tzbeta.net
   main       https://api.tez.ie/rpc/mainnet
   florence   https://florence-tezos.giganode.io
   florence   https://florencenet.smartpy.io
-  granada    https://granada-tezos.giganode.io
+  granada    https://testnet-tezos.giganode.io
   granada    https://granadanet.smartpy.io
+  hangzhou   https://hangzhounet.smartpy.io
+  hangzhou   https://rpc.hangzhounet.teztnets.xyz
   sandbox    http://localhost:20000
+  sandbox    http://localhost:8732
   mockup     mockup
 ```
 
