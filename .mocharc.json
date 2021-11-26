@@ -2,7 +2,6 @@
     "diff": true,
     "extension": ["js"],
     "package": "package.json",
-    "reporter": "mochawesome",
     "slow": 0,
     "timeout": 99999999999999,
     "recursive": true,
