@@ -25,6 +25,23 @@ entry removeSuperuser (su : address) {
     superusers.remove(su)
   }
 }
+asset whitelister {
+  waddr: address
+}
+
+entry addWhitelister(v : address) {
+  called by admin
+  effect {
+    whitelister.add({waddr = v})
+  }
+}
+
+entry removeWhitelister(v : address) {
+  called by admin
+  effect {
+    whitelister.remove(v)
+  }
+}
 
 function assertReceiver(addr : address) : bool {
   return
@@ -66,14 +83,14 @@ entry assertTransferlist (fromTransferListId : nat, toTransferListId : nat) {
 }
 
 entry updateUser (user : address, transferlistId : option<nat>) {
-  called by admin
+  called by admin or whitelister
   effect {
     users.update(user, transferlistId)
   }
 }
 
 entry updateUsers (utl : list<address * option<nat>>) {
-  called by admin
+  called by admin or whitelister
   effect {
     for i in utl do
       var user = i[0];
