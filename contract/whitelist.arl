@@ -66,7 +66,7 @@ entry assertTransfers (input_list : list<address * list<address>>) {
     var %from = input_item[0];
     var tos   = input_item[1];
     for %to in tos do
-      match callview<string>(selfaddress, "assertTransfer", (%from, %to)) with
+      match callview<string>(selfaddress, "assertTransfer", (caller, %from, %to)) with
       | some(v) ->  if v <> "" then fail(v)
       | none -> fail("INTERNAL_ERROR")
       end
@@ -130,7 +130,7 @@ getter getUser (user : address) : option<nat> {
   return users.getopt(user)
 }
 
-view assertTransfer (%from : address, %to : address) : string {
+view assertTransfer (sender : address, %from : address, %to : address) : string {
   var res : string = "";
   if not (match users.getopt(%from) with
     | some v ->
@@ -150,7 +150,7 @@ view assertTransfer (%from : address, %to : address) : string {
     | none   -> false
     end)
   then res := "TO_RESTRICTED"
-  else if not superusers.contains(caller)
+  else if not superusers.contains(sender)
   then begin
     var fromid       = users[%from];
     var toid         = users[%to];
