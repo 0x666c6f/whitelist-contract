@@ -32,6 +32,7 @@ const list0User2 = getAccount(mockup_mode ? 'gary' : "gary");
 const list1User1 = getAccount(mockup_mode ? 'hugo' : "hugo");
 const list1User2 = getAccount(mockup_mode ? 'ian' : "ian");
 const list2User1 = getAccount(mockup_mode ? 'jacky' : "jacky");
+const kevin = getAccount(mockup_mode ? 'kevin' : "kevin");
 
 describe("Deploy & init", async () => {
     it("Deploy Whitelist", async () => {
@@ -154,6 +155,29 @@ describe("Update user", async () => {
         const storage = await whitelist.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User2.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
+    });
+
+    it("Update an existing user in whitelist contract with no whitelist id (to delete it) as admin should succeed", async () => {
+        await whitelist.updateUser({
+            arg: {
+                user: kevin.pkh,
+                transferlistId: 0
+            },
+            as: whitelister.pkh
+        });
+        var storage = await whitelist.getStorage();
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${kevin.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user.int === "0")
+        await whitelist.updateUser({
+            arg: {
+                user: kevin.pkh,
+                transferlistId: null
+            },
+            as: whitelister.pkh
+        });
+        storagePostUpdate = await whitelist.getStorage();
+        user = await getValueFromBigMap(parseInt(storagePostUpdate.users), exprMichelineToJson(`"${kevin.pkh}"`), exprMichelineToJson(`address'`));
+        assert(user === null)
     });
 });
 

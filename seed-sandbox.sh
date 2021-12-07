@@ -1,0 +1,10 @@
+completium-cli transfer 10tz from alice to carl --force
+completium-cli transfer 10tz from alice to daniel --force
+completium-cli transfer 10tz from alice to eddy --force
+completium-cli transfer 10tz from alice to flo --force
+completium-cli transfer 10tz from alice to gary --force
+completium-cli transfer 10tz from alice to hugo --force
+completium-cli transfer 10tz from alice to ian --force
+completium-cli transfer 10tz from alice to jacky --force
+completium-cli transfer 10tz from alice to kevin --force
+completium-cli transfer 10tz from alice to kevin --force
