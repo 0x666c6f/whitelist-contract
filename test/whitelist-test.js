@@ -4,7 +4,8 @@ const {
     setQuiet,
     expectToThrow,
     getValueFromBigMap,
-    exprMichelineToJson
+    exprMichelineToJson,
+    setEndpoint
 } = require('@completium/completium-cli');
 
 const {
@@ -15,10 +16,12 @@ const assert = require('assert');
 
 setQuiet("true");
 
-const mockup_mode = false;
+const mockup_mode = true;
 
+setEndpoint(mockup_mode ? 'mockup' : 'https://hangzhounet.smartpy.io');
 
 // contracts
+let users;
 let whitelist;
 
 // accounts
@@ -35,21 +38,37 @@ const list2User1 = getAccount(mockup_mode ? 'jacky' : "jacky");
 const kevin = getAccount(mockup_mode ? 'kevin' : "kevin");
 
 describe("Deploy & init", async () => {
+    it("Deploy Users Storage", async () => {
+        [users, _] = await deploy('./contract/users_storage.arl', {
+            parameters: {
+                admin: whitelister.pkh,
+            }
+        })
+    });
     it("Deploy Whitelist", async () => {
         [whitelist, _] = await deploy('./contract/whitelist.arl', {
             parameters: {
                 admin: whitelister.pkh,
+                users: users.address
             },
             as: whitelister.pkh
         });
     });
+    it("Set Users Accessor", async () => {
+        await users.add_whitelister({
+            arg : {
+                new_whitelister : whitelist.address
+            },
+            as : whitelister.pkh
+        })
+    })
 });
 
 
 describe("Set admin", async () => {
     it("Set admin as non admin should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.setAdmin({
+            await whitelist.declareOwnership({
                 arg: {
                     value: whitelister.pkh
                 },
@@ -59,7 +78,7 @@ describe("Set admin", async () => {
     });
 
     it("Set admin should succeed", async () => {
-        await whitelist.setAdmin({
+        await whitelist.declareOwnership({
             arg: {
                 value: whitelister.pkh
             },
@@ -126,7 +145,7 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
-        const storage = await whitelist.getStorage();
+        const storage = await users.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User1.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
     });
@@ -139,7 +158,7 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
-        const storage = await whitelist.getStorage();
+        const storage = await users.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User2.pkh}"`), exprMichelineToJson(`address'`));
         assert(user === null)
     });
@@ -152,7 +171,7 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
-        const storage = await whitelist.getStorage();
+        const storage = await users.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User2.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
     });
@@ -165,7 +184,7 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
-        var storage = await whitelist.getStorage();
+        var storage = await users.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${kevin.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
         await whitelist.updateUser({
@@ -175,7 +194,7 @@ describe("Update user", async () => {
             },
             as: whitelister.pkh
         });
-        storagePostUpdate = await whitelist.getStorage();
+        storagePostUpdate = await users.getStorage();
         user = await getValueFromBigMap(parseInt(storagePostUpdate.users), exprMichelineToJson(`"${kevin.pkh}"`), exprMichelineToJson(`address'`));
         assert(user === null)
     });
@@ -202,7 +221,7 @@ describe("Update users", async () => {
             as: whitelister.pkh
         });
 
-        const storage = await whitelist.getStorage();
+        const storage = await users.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User1.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
         user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User2.pkh}"`), exprMichelineToJson(`address'`));
@@ -216,7 +235,7 @@ describe("Update users", async () => {
             },
             as: whitelister.pkh
         });
-        const storage = await whitelist.getStorage();
+        const storage = await users.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User1.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "1")
         user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User2.pkh}"`), exprMichelineToJson(`address'`));
