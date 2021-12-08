@@ -1,0 +1,92 @@
+archetype users_storage(admin : address)
+with metadata ""
+
+//----------------------------------------------------------------------------
+// Metadata
+//----------------------------------------------------------------------------
+
+entry set_metadata_uri(idata : bytes) {
+  called by admin
+  effect {
+    metadata := put(metadata, "", idata)
+  }
+}
+
+//----------------------------------------------------------------------------
+// Admin role transfer
+//----------------------------------------------------------------------------
+
+variable owner_candidate : option<address>       = none
+
+entry declare_ownership(candidate : address) {
+  called by admin
+  effect {
+    owner_candidate := some(candidate);
+  }
+}
+
+entry claim_ownership() {
+  called by opt_get(owner_candidate)
+  effect {
+    admin := opt_get(owner_candidate);
+    owner_candidate := none
+  }
+}
+
+//----------------------------------------------------------------------------
+// Whitelister role
+//----------------------------------------------------------------------------
+
+asset whitelister {
+  addr : address
+}
+
+entry add_whitelister(new_whitelister : address) {
+  called by admin
+  effect {
+    whitelister.add({ new_whitelister })
+  }
+}
+
+entry rm_whitelister(old_whitelister : address) {
+  called by admin
+  effect {
+    whitelister.remove(old_whitelister)
+  }
+}
+
+//----------------------------------------------------------------------------
+// Users storage
+//----------------------------------------------------------------------------
+
+variable users : big_map<address, nat> = []
+
+// READ
+view getopt(k : address) : option<nat> {
+  return users.getopt(k)
+}
+
+/**
+* Called by the cancel entrypoint of the Exchange contract.
+* It sets the value to none because a canceled order can never be filled again.
+*/
+entry remove(k : address) {
+  called by whitelister
+  effect {
+    users.remove(k)
+  }
+}
+
+entry put(k : address, v : nat) {
+  called by whitelister
+  effect {
+    users.put( k, v )
+  }
+}
+
+entry update(k : address, v : option<nat>) {
+  called by whitelister
+  effect {
+    users.update( k, v )
+  }
+}
