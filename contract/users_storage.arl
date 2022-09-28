@@ -1,6 +1,9 @@
 archetype users_storage(admin : address)
 with metadata ""
 
+constant MISSING_ADMIN_CANDIDATE  : string = "MISSING_ADMIN_CANDIDATE"
+constant INVALID_CALLER           : string = "INVALID_CALLER"
+
 //----------------------------------------------------------------------------
 // Metadata
 //----------------------------------------------------------------------------
@@ -16,20 +19,25 @@ entry set_metadata_uri(idata : bytes) {
 // Admin role transfer
 //----------------------------------------------------------------------------
 
-variable owner_candidate : option<address>       = none
+variable admin_candidate : option<address>       = none
 
-entry declare_ownership(candidate : address) {
+entry declare_admin(candidate : address) {
   called by admin
   effect {
-    owner_candidate := some(candidate);
+    admin_candidate := some(candidate);
   }
 }
 
-entry claim_ownership() {
-  called by opt_get(owner_candidate)
+entry claim_admin() {
+  constant {
+    admin_candidate_addr ?is admin_candidate otherwise MISSING_ADMIN_CANDIDATE;
+  }
+  require {
+    co1: admin_candidate_addr = caller otherwise INVALID_CALLER
+  }
   effect {
-    admin := opt_get(owner_candidate);
-    owner_candidate := none
+    admin := admin_candidate_addr;
+    admin_candidate := none
   }
 }
 
@@ -62,8 +70,8 @@ entry rm_whitelister(old_whitelister : address) {
 variable users : big_map<address, nat> = []
 
 // READ
-view getopt(k : address) : option<nat> {
-  return users.getopt(k)
+view get_user_id(k : address) : option<nat> {
+    return users[k]
 }
 
 /**
