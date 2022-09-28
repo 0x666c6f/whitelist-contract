@@ -137,7 +137,7 @@ function assert_receiver(addr : address) : bool {
         end
     | none   ->      res := false
     end
-  | none -> fail(USER_GETOPT_INTERNAL_ERROR)
+  | none -> res := false
   end;
   return res
 }
@@ -153,11 +153,9 @@ entry assert_transfers (input_list : list<address * list<address>>) {
     var %from = input_item[0];
     var tos   = input_item[1];
     for %to in tos do
-      const is_authorized ?= call_view<option<string>>(self_address, "assert_transfer", (caller, %from, %to));
-      match is_authorized with
-      | some(v) ->  if v <> "" then fail(v)
-      | none -> fail(INTERNAL_ERROR)
-      end
+      const is_authorized ?= call_view<string>(self_address, "assert_transfer", (caller, %from, %to)) : "ASSERT_TRANSFER_FAILED";
+      if is_authorized <> "" then
+        fail(is_authorized)
     done
   done
 }
@@ -238,67 +236,26 @@ getter get_user (user : address) : option<nat> {
 
 view assert_transfer (sender : address, %from : address, %to : address) : string {
   var res : string = "";
-  var from_id_opt = none<nat>;
-  var to_id_opt = none<nat>;
-  var is_from_restricted = false;
-  const from_user_id ?= call_view<option<nat>>(users, "get_user_id", %from);
-  match from_user_id with
-  | some optv ->
-    from_id_opt := some(optv);
-    match from_id_opt with
-    | some v ->
-        match transfer_lists[v] with
-        | some(r) -> is_from_restricted := not r.unrestricted
-        | none ->    is_from_restricted := true
-        end
-    | none   ->      is_from_restricted := true
-    end
-  | none -> fail(USER_GETOPT_INTERNAL_ERROR)
-  end;
+  const from_query ?= call_view<option<nat>>(users, "get_user_id", %from) : FROM_RESTRICTED;
+  const from_user_id ?= from_query : FROM_RESTRICTED;
+  const from_user ?= transfer_lists[from_user_id] : FROM_RESTRICTED;
+  const is_from_restricted = not from_user.unrestricted;
+
   if is_from_restricted then
     res := FROM_RESTRICTED
   else begin
-    var is_to_restricted = false;
-    const to_user_id ?= call_view<option<nat>>(users, "get_user_id", %to);
-
-    match to_user_id with
-    | some optv ->
-      to_id_opt := some(optv);
-      match to_id_opt with
-      | some v ->
-          match transfer_lists[v] with
-          | some(r) -> is_to_restricted := not r.unrestricted
-          | none ->    is_to_restricted := true
-          end
-      | none   ->      is_to_restricted := true
-      end
-    | none -> fail(USER_GETOPT_INTERNAL_ERROR)
-    end;
+    const to_query ?= call_view<option<nat>>(users, "get_user_id", %to) : TO_RESTRICTED;
+    const to_user_id ?= to_query : TO_RESTRICTED;
+    const to_user ?= transfer_lists[to_user_id] : TO_RESTRICTED;
+    const is_to_restricted = not to_user.unrestricted;
     if is_to_restricted then
       res := TO_RESTRICTED
     else begin
       if not super_users.contains(sender) then begin
-        match from_id_opt with
-        | some(from_id) ->
-          match to_id_opt with
-          | some(to_id) -> begin
-            var allowed_lists = transfer_lists[from_id];
-            match allowed_lists with
-            | some(user_list) -> begin
-              if not user_list.allowed_transfer_lists.contains(to_id)
-              then res := TO_NOT_ALLOWED
-            end
-            | none -> begin
-              res := TO_NOT_ALLOWED
-            end
-            end
-            end
-          | none -> fail(INTERNAL_ERROR)
-          end
-        | none -> fail(INTERNAL_ERROR)
-        end
+        if not from_user.allowed_transfer_lists.contains(to_user_id)
+        then res := TO_NOT_ALLOWED
       end;
-    end
+    end;
   end;
   return res
 }

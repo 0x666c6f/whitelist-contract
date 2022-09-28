@@ -644,8 +644,8 @@ describe("Assert transfer list", async () => {
         await expectToThrow(async () => {
             await whitelist.assert_transfer_list({
                 arg: {
-                    fromTransferListId: 666,
-                    toTransferListId: 1
+                    from_transfer_list_id: 666,
+                    to_transfer_list_id: 1
                 },
                 as: whitelister.pkh
             });
@@ -656,8 +656,8 @@ describe("Assert transfer list", async () => {
         await expectToThrow(async () => {
             await whitelist.assert_transfer_list({
                 arg: {
-                    fromTransferListId: 1,
-                    toTransferListId: 666
+                    from_transfer_list_id: 1,
+                    to_transfer_list_id: 666
                 },
                 as: whitelister.pkh
             });
@@ -668,8 +668,8 @@ describe("Assert transfer list", async () => {
         await expectToThrow(async () => {
             await whitelist.assert_transfer_list({
                 arg: {
-                    fromTransferListId: 2,
-                    toTransferListId: 1
+                    from_transfer_list_id: 2,
+                    to_transfer_list_id: 1
                 },
                 as: whitelister.pkh
             });
@@ -680,8 +680,8 @@ describe("Assert transfer list", async () => {
         await expectToThrow(async () => {
             await whitelist.assert_transfer_list({
                 arg: {
-                    fromTransferListId: 1,
-                    toTransferListId: 2
+                    from_transfer_list_id: 1,
+                    to_transfer_list_id: 2
                 },
                 as: whitelister.pkh
             });
@@ -692,8 +692,8 @@ describe("Assert transfer list", async () => {
         await expectToThrow(async () => {
             await whitelist.assert_transfer_list({
                 arg: {
-                    fromTransferListId: 1,
-                    toTransferListId: 1
+                    from_transfer_list_id: 1,
+                    to_transfer_list_id: 1
                 },
                 as: whitelister.pkh
             });
@@ -703,8 +703,8 @@ describe("Assert transfer list", async () => {
     it("Assert transfer list with to transfer list  in from allowed lists should succeed", async () => {
         await whitelist.assert_transfer_list({
             arg: {
-                fromTransferListId: 1,
-                toTransferListId: 0
+                from_transfer_list_id: 1,
+                to_transfer_list_id: 0
             },
             as: whitelister.pkh
         });
