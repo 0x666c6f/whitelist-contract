@@ -163,23 +163,11 @@ entry assert_transfers (input_list : list<address * list<address>>) {
 entry assert_transfer_list (from_transfer_list_id : nat, to_transfer_list_id : nat) {
   do_require(transfer_lists.contains(from_transfer_list_id) = true, FROM_TRANSFERLIST_NOT_FOUND);
   do_require(transfer_lists.contains(to_transfer_list_id) = true, TO_TRANSFERLIST_NOT_FOUND);
-  match transfer_lists[from_transfer_list_id] with
-    | some(from_user) -> begin
-      do_require(from_user.unrestricted = true, FROM_INVALID_UNRESTRICTED_STATE);
-      do_require(from_user.allowed_transfer_lists.contains(to_transfer_list_id) = true, TO_TRANSFERLIST_NOT_FOUND_IN_FROM);
-    end
-    | none -> begin
-      fail(FROM_INVALID_UNRESTRICTED_STATE)
-    end
-  end;
-  match transfer_lists[to_transfer_list_id] with
-    | some(to_user) -> begin
-      do_require(to_user.unrestricted = true, TO_INVALID_UNRESTRICTED_STATE)
-    end
-    | none -> begin
-      fail(TO_INVALID_UNRESTRICTED_STATE)
-    end
-  end;
+  const from_user ?= transfer_lists[from_transfer_list_id] : TO_INVALID_UNRESTRICTED_STATE;
+  do_require(from_user.unrestricted = true, FROM_INVALID_UNRESTRICTED_STATE);
+  const to_user ?= transfer_lists[to_transfer_list_id] : TO_INVALID_UNRESTRICTED_STATE;
+  do_require(to_user.unrestricted = true, TO_INVALID_UNRESTRICTED_STATE);
+  do_require(from_user.allowed_transfer_lists.contains(to_transfer_list_id) = true, TO_TRANSFERLIST_NOT_FOUND_IN_FROM);
 }
 
 entry update_user (user : address, transfer_list_id : option<nat>) {
