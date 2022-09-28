@@ -120,7 +120,7 @@ exports.getTokenId = (archetypeid, serial) => {
 }
 
 exports.errors = {
-  INVALID_CALLER: '"InvalidCaller"',
+  INVALID_CALLER: '"INVALID_CALLER"',
   FA2_INSUFFICIENT_BALANCE: '"FA2_INSUFFICIENT_BALANCE"',
   FA2_NOT_OPERATOR: '"FA2_NOT_OPERATOR"',
   ARCHETYPE_ALREADY_REGISTERED: '"Archetype already registered"',

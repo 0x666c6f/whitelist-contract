@@ -16,25 +16,31 @@ constant TO_TRANSFERLIST_NOT_FOUND         : string = "TO_TRANSFERLIST_NOT_FOUND
 constant TO_TRANSFERLIST_NOT_FOUND_IN_FROM : string = "TO_TRANSFERLIST_NOT_FOUND_IN_FROM"
 constant USER_GETOPT_INTERNAL_ERROR        : string = "USER_GETOPT_INTERNAL_ERROR"
 constant USER_RESTRICTED                   : string = "USER_RESTRICTED"
-
+constant MISSING_ADMIN_CANDIDATE  : string = "MISSING_ADMIN_CANDIDATE"
+constant INVALID_CALLER           : string = "INVALID_CALLER"
 //----------------------------------------------------------------------------
 // Admin role transfer
 //----------------------------------------------------------------------------
 
-variable owner_candidate : option<address>       = none
+variable admin_candidate : option<address>       = none
 
-entry declareOwnership(candidate : address) {
+entry declare_admin(candidate : address) {
   called by admin
   effect {
-    owner_candidate := some(candidate);
+    admin_candidate := some(candidate);
   }
 }
 
-entry claimOwnership() {
-  called by opt_get(owner_candidate)
+entry claim_admin() {
+  constant {
+    admin_candidate_addr ?is admin_candidate otherwise MISSING_ADMIN_CANDIDATE;
+  }
+  require {
+    co1: admin_candidate_addr = caller otherwise INVALID_CALLER
+  }
   effect {
-    admin := opt_get(owner_candidate);
-    owner_candidate := none
+    admin := admin_candidate_addr;
+    admin_candidate := none
   }
 }
 
@@ -47,7 +53,7 @@ variable paused : bool = false
 entry pause() {
   called by admin
   effect {
-    dorequire(not paused, CONTRACT_PAUSED);
+    do_require(not paused, CONTRACT_PAUSED);
     paused := true
   }
 }
@@ -55,34 +61,34 @@ entry pause() {
 entry unpause() {
   called by admin
   effect {
-    dorequire(paused, CONTRACT_NOT_PAUSED);
+    do_require(paused, CONTRACT_NOT_PAUSED);
     paused := false
   }
 }
 
-function isNotPaused() : bool {
+function is_not_paused() : bool {
   if (not paused)
   then return true
   else fail(CONTRACT_PAUSED)
 }
 
 //----------------------------------------------------------------------------
-// Superusers
+// super_users
 //----------------------------------------------------------------------------
 
-variable superusers : set<address> = []
+variable super_users : set<address> = []
 
-entry addSuperuser (su : address) {
+entry add_super_user (su : address) {
   called by admin
   effect {
-    superusers.add(su)
+    super_users.add(su)
   }
 }
 
-entry removeSuperuser (su : address) {
+entry remove_super_user (su : address) {
   called by admin
   effect {
-    superusers.remove(su)
+    super_users.remove(su)
   }
 }
 
@@ -94,14 +100,14 @@ asset whitelister {
   waddr: address
 }
 
-entry addWhitelister(v : address) {
+entry add_whitelister(v : address) {
   called by admin
   effect {
     whitelister.add({waddr = v})
   }
 }
 
-entry removeWhitelister(v : address) {
+entry remove_whitelister(v : address) {
   called by admin
   effect {
     whitelister.remove(v)
@@ -112,19 +118,20 @@ entry removeWhitelister(v : address) {
 // Whitelist contract
 //----------------------------------------------------------------------------
 
-record transferlist {
+record transfer_list {
   unrestricted         : bool;
-  allowedTransferlists : set<nat>;
+  allowed_transfer_lists : set<nat>;
 }
-variable transferlists : big_map<nat, transferlist> = []
+variable transfer_lists : big_map<nat, transfer_list> = []
 
-function assertReceiver(addr : address) : bool {
+function assert_receiver(addr : address) : bool {
   var res = true;
-  match callview<option<nat>>(users, "getopt", addr) with
+  const user_id ?= call_view<option<nat>>(users, "get_user_id", addr);
+  match user_id with
   | some optv ->
-    match optv with
+    match some(optv) with
     | some v ->
-        match transferlists.getopt(v) with
+        match transfer_lists[v] with
         | some(r) -> res := r.unrestricted
         | none ->    res := false
         end
@@ -135,18 +142,19 @@ function assertReceiver(addr : address) : bool {
   return res
 }
 
-entry assertReceivers (addrs : list<address>) {
+entry assert_receivers (addrs : list<address>) {
   for addr in addrs do
-    dorequire(assertReceiver(addr), USER_RESTRICTED)
+    do_require(assert_receiver(addr), USER_RESTRICTED)
   done
 }
 
-entry assertTransfers (input_list : list<address * list<address>>) {
+entry assert_transfers (input_list : list<address * list<address>>) {
   for input_item in input_list do
     var %from = input_item[0];
     var tos   = input_item[1];
     for %to in tos do
-      match callview<string>(selfaddress, "assertTransfer", (caller, %from, %to)) with
+      const is_authorized ?= call_view<option<string>>(self_address, "assert_transfer", (caller, %from, %to));
+      match is_authorized with
       | some(v) ->  if v <> "" then fail(v)
       | none -> fail(INTERNAL_ERROR)
       end
@@ -154,76 +162,92 @@ entry assertTransfers (input_list : list<address * list<address>>) {
   done
 }
 
-entry assertTransferlist (fromTransferListId : nat, toTransferListId : nat) {
-  dorequire(transferlists.contains(fromTransferListId) = true, FROM_TRANSFERLIST_NOT_FOUND);
-  dorequire(transferlists.contains(toTransferListId) = true, TO_TRANSFERLIST_NOT_FOUND);
-  dorequire(transferlists[fromTransferListId].unrestricted = true, FROM_INVALID_UNRESTRICTED_STATE);
-  dorequire(transferlists[toTransferListId].unrestricted = true, TO_INVALID_UNRESTRICTED_STATE);
-  dorequire(transferlists[fromTransferListId].allowedTransferlists.contains(toTransferListId) = true, TO_TRANSFERLIST_NOT_FOUND_IN_FROM);
+entry assert_transfer_list (from_transfer_list_id : nat, to_transfer_list_id : nat) {
+  do_require(transfer_lists.contains(from_transfer_list_id) = true, FROM_TRANSFERLIST_NOT_FOUND);
+  do_require(transfer_lists.contains(to_transfer_list_id) = true, TO_TRANSFERLIST_NOT_FOUND);
+  match transfer_lists[from_transfer_list_id] with
+    | some(from_user) -> begin
+      do_require(from_user.unrestricted = true, FROM_INVALID_UNRESTRICTED_STATE);
+      do_require(from_user.allowed_transfer_lists.contains(to_transfer_list_id) = true, TO_TRANSFERLIST_NOT_FOUND_IN_FROM);
+    end
+    | none -> begin
+      fail(FROM_INVALID_UNRESTRICTED_STATE)
+    end
+  end;
+  match transfer_lists[to_transfer_list_id] with
+    | some(to_user) -> begin
+      do_require(to_user.unrestricted = true, TO_INVALID_UNRESTRICTED_STATE)
+    end
+    | none -> begin
+      fail(TO_INVALID_UNRESTRICTED_STATE)
+    end
+  end;
 }
 
-entry updateUser (user : address, transferlistId : option<nat>) {
+entry update_user (user : address, transfer_list_id : option<nat>) {
   called by admin or whitelister
   require {
-    r0: isNotPaused();
+    r0: is_not_paused();
   }
   effect {
-    transfer 0tz to users call update<address * option<nat>>((user, transferlistId))
+    transfer 0tz to users call update<address * option<nat>>((user, transfer_list_id))
   }
 }
 
-entry updateUsers (utl : list<address * option<nat>>) {
+entry update_users (utl : list<address * option<nat>>) {
   called by admin or whitelister
   require {
-    r1: isNotPaused();
+    r1: is_not_paused();
   }
   effect {
     for i in utl do
       var user = i[0];
-      var transferlistId = i[1];
-      transfer 0tz to users call update<address * option<nat>>((user, transferlistId))
+      var transfer_list_id = i[1];
+      transfer 0tz to users call update<address * option<nat>>((user, transfer_list_id))
     done
   }
 }
 
-entry updateTransferlist (
-    transferlistId : nat,
+entry update_transfer_list (
+    transfer_list_id : nat,
     u : option<(bool * set<nat>)>) {
   called by admin
   require {
-    r2: isNotPaused();
+    r2: is_not_paused();
   }
   effect {
     match u with
     | some v -> begin
-      var ltransferlist = {unrestricted = v[0]; allowedTransferlists = v[1]};
-      transferlists.put(transferlistId, ltransferlist)
+      var ltransferlist = {unrestricted = v[0]; allowed_transfer_lists = v[1]};
+      transfer_lists.put(transfer_list_id, ltransferlist)
       end
-    | none -> transferlists.remove(transferlistId)
+    | none -> transfer_lists.remove(transfer_list_id)
     end
   }
 }
 
-getter getUser (user : address) : option<nat> {
+getter get_user (user : address) : option<nat> {
   var res = none<nat>;
-  match callview<option<nat>>(users, "getopt", user) with
-  | some optv -> res := optv
+  const user_id ?= call_view<option<nat>>(users, "get_user_id", user);
+  match user_id with
+  | some optv -> res := some(optv)
   | none -> fail(USER_GETOPT_INTERNAL_ERROR)
   end;
   return res
 }
 
-view assertTransfer (sender : address, %from : address, %to : address) : string {
+view assert_transfer (sender : address, %from : address, %to : address) : string {
   var res : string = "";
-  var fromidopt = none<nat>;
-  var toidopt = none<nat>;
+  var from_id_opt = none<nat>;
+  var to_id_opt = none<nat>;
   var is_from_restricted = false;
-  match callview<option<nat>>(users, "getopt", %from) with
+  const from_user_id ?= call_view<option<nat>>(users, "get_user_id", %from);
+  match from_user_id with
   | some optv ->
-    fromidopt := optv;
-    match optv with
+    from_id_opt := some(optv);
+    match from_id_opt with
     | some v ->
-        match transferlists.getopt(v) with
+        match transfer_lists[v] with
         | some(r) -> is_from_restricted := not r.unrestricted
         | none ->    is_from_restricted := true
         end
@@ -235,12 +259,14 @@ view assertTransfer (sender : address, %from : address, %to : address) : string 
     res := FROM_RESTRICTED
   else begin
     var is_to_restricted = false;
-    match callview<option<nat>>(users, "getopt", %to) with
+    const to_user_id ?= call_view<option<nat>>(users, "get_user_id", %to);
+
+    match to_user_id with
     | some optv ->
-      toidopt := optv;
-      match optv with
+      to_id_opt := some(optv);
+      match to_id_opt with
       | some v ->
-          match transferlists.getopt(v) with
+          match transfer_lists[v] with
           | some(r) -> is_to_restricted := not r.unrestricted
           | none ->    is_to_restricted := true
           end
@@ -251,14 +277,21 @@ view assertTransfer (sender : address, %from : address, %to : address) : string 
     if is_to_restricted then
       res := TO_RESTRICTED
     else begin
-      if not superusers.contains(sender) then begin
-        match fromidopt with
-        | some(fromid) ->
-          match toidopt with
-          | some(toid) -> begin
-            var allowedlists = transferlists[fromid].allowedTransferlists;
-            if not allowedlists.contains(toid)
-            then res := TO_NOT_ALLOWED
+      if not super_users.contains(sender) then begin
+        match from_id_opt with
+        | some(from_id) ->
+          match to_id_opt with
+          | some(to_id) -> begin
+            var allowed_lists = transfer_lists[from_id];
+            match allowed_lists with
+            | some(user_list) -> begin
+              if not user_list.allowed_transfer_lists.contains(to_id)
+              then res := TO_NOT_ALLOWED
+            end
+            | none -> begin
+              res := TO_NOT_ALLOWED
+            end
+            end
             end
           | none -> fail(INTERNAL_ERROR)
           end

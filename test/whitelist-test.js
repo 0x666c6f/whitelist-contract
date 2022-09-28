@@ -25,16 +25,16 @@ let users;
 let whitelist;
 
 // accounts
-const superUser = getAccount(mockup_mode ? 'alice' : "alice");
+const super_user = getAccount(mockup_mode ? 'alice' : "alice");
 const whitelister = getAccount(mockup_mode ? 'bob' : "bob");
 const carl = getAccount(mockup_mode ? 'carl' : "carl");
 const daniel = getAccount(mockup_mode ? 'daniel' : "daniel");
 const eddy = getAccount(mockup_mode ? 'eddy' : "eddy");
-const list0User1 = getAccount(mockup_mode ? 'flo' : "flo");
-const list0User2 = getAccount(mockup_mode ? 'gary' : "gary");
-const list1User1 = getAccount(mockup_mode ? 'hugo' : "hugo");
-const list1User2 = getAccount(mockup_mode ? 'ian' : "ian");
-const list2User1 = getAccount(mockup_mode ? 'jacky' : "jacky");
+const list0_user1 = getAccount(mockup_mode ? 'flo' : "flo");
+const list0_user2 = getAccount(mockup_mode ? 'gary' : "gary");
+const list1_user1 = getAccount(mockup_mode ? 'hugo' : "hugo");
+const list1_user2 = getAccount(mockup_mode ? 'ian' : "ian");
+const list2_user1 = getAccount(mockup_mode ? 'jacky' : "jacky");
 const kevin = getAccount(mockup_mode ? 'kevin' : "kevin");
 
 describe("Deploy & init", async () => {
@@ -68,7 +68,7 @@ describe("Deploy & init", async () => {
 describe("Set admin", async () => {
     it("Set admin as non admin should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.declareOwnership({
+            await whitelist.declare_admin({
                 arg: {
                     value: whitelister.pkh
                 },
@@ -78,7 +78,7 @@ describe("Set admin", async () => {
     });
 
     it("Set admin should succeed", async () => {
-        await whitelist.declareOwnership({
+        await whitelist.declare_admin({
             arg: {
                 value: whitelister.pkh
             },
@@ -92,9 +92,9 @@ describe("Set admin", async () => {
 describe("Add super user", async () => {
     it("Add super user in whitelist contract as non admin should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.addSuperuser({
+            await whitelist.add_super_user({
                 arg: {
-                    user: superUser.pkh,
+                    user: super_user.pkh,
                 },
                 as: carl.pkh
             });
@@ -102,35 +102,35 @@ describe("Add super user", async () => {
     });
 
     it("Add super user in whitelist contract as admin should succeed", async () => {
-        await whitelist.addSuperuser({
+        await whitelist.add_super_user({
             arg: {
-                user: superUser.pkh,
+                user: super_user.pkh,
             },
             as: whitelister.pkh
         });
         const storage = await whitelist.getStorage()
-        assert(storage.superusers.includes(superUser.pkh))
+        assert(storage.super_users.includes(super_user.pkh))
     });
 
     it("Add an already existing super user in whitelist contract as admin should succeed", async () => {
-        await whitelist.addSuperuser({
+        await whitelist.add_super_user({
             arg: {
-                user: superUser.pkh,
+                user: super_user.pkh,
             },
             as: whitelister.pkh
         });
         const storage = await whitelist.getStorage()
-        assert(storage.superusers.includes(superUser.pkh))
+        assert(storage.super_users.includes(super_user.pkh))
     });
 });
 
 describe("Update user", async () => {
     it("Update a non existing user in whitelist contract as non admin should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.updateUser({
+            await whitelist.update_user({
                 arg: {
-                    user: list0User1.pkh,
-                    transferlistId: 0
+                    user: list0_user1.pkh,
+                    transfer_list_id: 0
                 },
                 as: carl.pkh
             });
@@ -138,59 +138,59 @@ describe("Update user", async () => {
     });
 
     it("Update a non existing user in whitelist contract as admin should succeed", async () => {
-        await whitelist.updateUser({
+        await whitelist.update_user({
             arg: {
-                user: list0User1.pkh,
-                transferlistId: 0
+                user: list0_user1.pkh,
+                transfer_list_id: 0
             },
             as: whitelister.pkh
         });
         const storage = await users.getStorage();
-        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User1.pkh}"`), exprMichelineToJson(`address'`));
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0_user1.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
     });
 
     it("Update a non existing user in whitelist contract with no whitelist id as admin should succeed", async () => {
-        await whitelist.updateUser({
+        await whitelist.update_user({
             arg: {
-                user: list0User2.pkh,
-                transferlistId: null
+                user: list0_user2.pkh,
+                transfer_list_id: null
             },
             as: whitelister.pkh
         });
         const storage = await users.getStorage();
-        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User2.pkh}"`), exprMichelineToJson(`address'`));
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0_user2.pkh}"`), exprMichelineToJson(`address'`));
         assert(user === null)
     });
 
     it("Update an existing user in whitelist contract with whitelist id as admin should succeed", async () => {
-        await whitelist.updateUser({
+        await whitelist.update_user({
             arg: {
-                user: list0User2.pkh,
-                transferlistId: 0
+                user: list0_user2.pkh,
+                transfer_list_id: 0
             },
             as: whitelister.pkh
         });
         const storage = await users.getStorage();
-        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0User2.pkh}"`), exprMichelineToJson(`address'`));
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list0_user2.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
     });
 
     it("Update an existing user in whitelist contract with no whitelist id (to delete it) as admin should succeed", async () => {
-        await whitelist.updateUser({
+        await whitelist.update_user({
             arg: {
                 user: kevin.pkh,
-                transferlistId: 0
+                transfer_list_id: 0
             },
             as: whitelister.pkh
         });
         var storage = await users.getStorage();
         var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${kevin.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
-        await whitelist.updateUser({
+        await whitelist.update_user({
             arg: {
                 user: kevin.pkh,
-                transferlistId: null
+                transfer_list_id: null
             },
             as: whitelister.pkh
         });
@@ -204,9 +204,9 @@ describe("Update users", async () => {
 
     it("Update non existing users in whitelist contract as non admin should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.updateUsers({
+            await whitelist.update_users({
                 arg: {
-                    utl: [[list1User1.pkh, 1], [list1User2.pkh, null]]
+                    utl: [[list1_user1.pkh, 1], [list1_user2.pkh, null]]
                 },
                 as: carl.pkh
             });
@@ -214,31 +214,31 @@ describe("Update users", async () => {
     });
 
     it("Update non existing users in whitelist contract as admin should succeed", async () => {
-        await whitelist.updateUsers({
+        await whitelist.update_users({
             arg: {
-                utl: [[list1User1.pkh, 0], [list1User2.pkh, null]]
+                utl: [[list1_user1.pkh, 0], [list1_user2.pkh, null]]
             },
             as: whitelister.pkh
         });
 
         const storage = await users.getStorage();
-        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User1.pkh}"`), exprMichelineToJson(`address'`));
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1_user1.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "0")
-        user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User2.pkh}"`), exprMichelineToJson(`address'`));
+        user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1_user2.pkh}"`), exprMichelineToJson(`address'`));
         assert(user === null)
     });
 
     it("Update existing users in whitelist contract as admin should succeed", async () => {
-        await whitelist.updateUsers({
+        await whitelist.update_users({
             arg: {
-                utl: [[list1User1.pkh, 1], [list1User2.pkh, 1]]
+                utl: [[list1_user1.pkh, 1], [list1_user2.pkh, 1]]
             },
             as: whitelister.pkh
         });
         const storage = await users.getStorage();
-        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User1.pkh}"`), exprMichelineToJson(`address'`));
+        var user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1_user1.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "1")
-        user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1User2.pkh}"`), exprMichelineToJson(`address'`));
+        user = await getValueFromBigMap(parseInt(storage.users), exprMichelineToJson(`"${list1_user2.pkh}"`), exprMichelineToJson(`address'`));
         assert(user.int === "1")
     });
 });
@@ -246,9 +246,9 @@ describe("Update users", async () => {
 describe("Update transfer list", async () => {
     it("Update non existing transfer list as non admin should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.updateTransferlist({
+            await whitelist.update_transfer_list({
                 arg: {
-                    transferlistId: 0,
+                    transfer_list_id: 0,
                     u: [true, [0]]
                 },
                 as: carl.pkh
@@ -257,15 +257,15 @@ describe("Update transfer list", async () => {
     });
 
     it("Update non existing transfer list as admin should succeed", async () => {
-        await whitelist.updateTransferlist({
+        await whitelist.update_transfer_list({
             arg: {
-                transferlistId: 0,
+                transfer_list_id: 0,
                 u: [false, [0, 2, 3]]
             },
             as: whitelister.pkh
         });
         const storage = await whitelist.getStorage();
-        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`0`), exprMichelineToJson(`nat'`));
+        var list = await getValueFromBigMap(parseInt(storage.transfer_lists), exprMichelineToJson(`0`), exprMichelineToJson(`nat'`));
         assert(list.prim === "Pair"
             && list.args.length === 2
             && list.args[0].prim === "False"
@@ -277,15 +277,15 @@ describe("Update transfer list", async () => {
     });
 
     it("Update non existing transfer list as admin with no allowed lists should succeed", async () => {
-        await whitelist.updateTransferlist({
+        await whitelist.update_transfer_list({
             arg: {
-                transferlistId: 1,
+                transfer_list_id: 1,
                 u: [true, []]
             },
             as: whitelister.pkh
         });
         const storage = await whitelist.getStorage();
-        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`1`), exprMichelineToJson(`nat'`));
+        var list = await getValueFromBigMap(parseInt(storage.transfer_lists), exprMichelineToJson(`1`), exprMichelineToJson(`nat'`));
         assert(list.prim === "Pair"
             && list.args.length === 2
             && list.args[0].prim === "True"
@@ -294,15 +294,15 @@ describe("Update transfer list", async () => {
     });
 
     it("Update existing transfer list as admin with no allowed lists should succeed", async () => {
-        await whitelist.updateTransferlist({
+        await whitelist.update_transfer_list({
             arg: {
-                transferlistId: 0,
+                transfer_list_id: 0,
                 u: [true, []]
             },
             as: whitelister.pkh
         });
         const storage = await whitelist.getStorage();
-        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`0`), exprMichelineToJson(`nat'`));
+        var list = await getValueFromBigMap(parseInt(storage.transfer_lists), exprMichelineToJson(`0`), exprMichelineToJson(`nat'`));
         assert(list.prim === "Pair"
             && list.args.length === 2
             && list.args[0].prim === "True"
@@ -311,15 +311,15 @@ describe("Update transfer list", async () => {
     });
 
     it("Update existing transfer list as admin should succeed", async () => {
-        await whitelist.updateTransferlist({
+        await whitelist.update_transfer_list({
             arg: {
-                transferlistId: 1,
+                transfer_list_id: 1,
                 u: [true, [0]]
             },
             as: whitelister.pkh
         });
         const storage = await whitelist.getStorage();
-        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`1`), exprMichelineToJson(`nat'`));
+        var list = await getValueFromBigMap(parseInt(storage.transfer_lists), exprMichelineToJson(`1`), exprMichelineToJson(`nat'`));
         assert(list.prim === "Pair"
             && list.args.length === 2
             && list.args[0].prim === "True"
@@ -330,30 +330,30 @@ describe("Update transfer list", async () => {
     });
 
     it("Update existing transfer list with null to delete it as admin should succeed", async () => {
-        await whitelist.updateTransferlist({
+        await whitelist.update_transfer_list({
             arg: {
-                transferlistId: 3,
+                transfer_list_id: 3,
                 u: [true, [0]]
             },
             as: whitelister.pkh
         });
         const storage = await whitelist.getStorage();
-        var list = await getValueFromBigMap(parseInt(storage.transferlists), exprMichelineToJson(`3`), exprMichelineToJson(`nat'`));
+        var list = await getValueFromBigMap(parseInt(storage.transfer_lists), exprMichelineToJson(`3`), exprMichelineToJson(`nat'`));
         assert(list.prim === "Pair"
             && list.args.length === 2
             && list.args[0].prim === "True"
             && list.args[1].length === 1
             && list.args[1][0].int === "0"
         )
-        await whitelist.updateTransferlist({
+        await whitelist.update_transfer_list({
             arg: {
-                transferlistId: 3,
+                transfer_list_id: 3,
                 u: null
             },
             as: whitelister.pkh
         });
         const storage2 = await whitelist.getStorage();
-        list = await getValueFromBigMap(parseInt(storage2.transferlists), exprMichelineToJson(`3`), exprMichelineToJson(`nat'`));
+        list = await getValueFromBigMap(parseInt(storage2.transfer_lists), exprMichelineToJson(`3`), exprMichelineToJson(`nat'`));
         assert(list === null)
     });
 });
@@ -362,9 +362,9 @@ describe("Remove super user", async () => {
 
     it("Remove super user in whitelist contract as non admin should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.removeSuperuser({
+            await whitelist.remove_super_user({
                 arg: {
-                    user: superUser.pkh,
+                    user: super_user.pkh,
                 },
                 as: carl.pkh
             });
@@ -373,31 +373,31 @@ describe("Remove super user", async () => {
 
     it("Remove non existing super user from whitelist contract should succeed", async () => {
         const storage = await whitelist.getStorage()
-        assert(!storage.superusers.includes(carl.pkh))
-        await whitelist.removeSuperuser({
+        assert(!storage.super_users.includes(carl.pkh))
+        await whitelist.remove_super_user({
             arg: {
                 user: carl.pkh,
             },
             as: whitelister.pkh
         });
         const storage2 = await whitelist.getStorage()
-        assert(!storage2.superusers.includes(carl.pkh))
+        assert(!storage2.super_users.includes(carl.pkh))
     });
 
     it("Remove existing super user from whitelist contract should succeed", async () => {
         const storage = await whitelist.getStorage()
-        assert(storage.superusers.includes(superUser.pkh))
-        await whitelist.removeSuperuser({
+        assert(storage.super_users.includes(super_user.pkh))
+        await whitelist.remove_super_user({
             arg: {
-                user: superUser.pkh,
+                user: super_user.pkh,
             },
             as: whitelister.pkh
         });
         const storage2 = await whitelist.getStorage()
-        assert(!storage2.superusers.includes(superUser.pkh))
-        await whitelist.addSuperuser({
+        assert(!storage2.super_users.includes(super_user.pkh))
+        await whitelist.add_super_user({
             arg: {
-                user: superUser.pkh,
+                user: super_user.pkh,
             },
             as: whitelister.pkh
         });
@@ -406,16 +406,16 @@ describe("Remove super user", async () => {
 
 describe("Assert receivers", async () => {
     it("Set up users for assert receivers tests", async () => {
-        await whitelist.updateTransferlist({
+        await whitelist.update_transfer_list({
             arg: {
-                transferlistId: 2,
+                transfer_list_id: 2,
                 u: [false, []]
             },
             as: whitelister.pkh
         });
-        await whitelist.updateUsers({
+        await whitelist.update_users({
             arg: {
-                utl: [[list2User1.pkh, 2], [carl.pkh, 2], [list1User1.pkh, null]]
+                utl: [[list2_user1.pkh, 2], [carl.pkh, 2], [list1_user1.pkh, null]]
             },
             as: whitelister.pkh
         });
@@ -423,9 +423,9 @@ describe("Assert receivers", async () => {
 
     it("Assert receivers with only restricted users should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertReceivers({
+            await whitelist.assert_receivers({
                 arg: {
-                    addrs: [list2User1.pkh, carl.pkh]
+                    addrs: [list2_user1.pkh, carl.pkh]
                 },
                 as: whitelister.pkh
             });
@@ -434,9 +434,9 @@ describe("Assert receivers", async () => {
 
     it("Assert receivers with restricted and non restricted users should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertReceivers({
+            await whitelist.assert_receivers({
                 arg: {
-                    addrs: [carl.pkh, list1User1.pkh]
+                    addrs: [carl.pkh, list1_user1.pkh]
                 },
                 as: whitelister.pkh
             });
@@ -445,7 +445,7 @@ describe("Assert receivers", async () => {
 
     it("Assert receivers with unknown users should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertReceivers({
+            await whitelist.assert_receivers({
                 arg: {
                     addrs: [whitelister.pkh]
                 },
@@ -456,9 +456,9 @@ describe("Assert receivers", async () => {
 
     it("Assert receivers with users without allowed list should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertReceivers({
+            await whitelist.assert_receivers({
                 arg: {
-                    addrs: [list1User1.pkh]
+                    addrs: [list1_user1.pkh]
                 },
                 as: whitelister.pkh
             });
@@ -466,9 +466,9 @@ describe("Assert receivers", async () => {
     });
 
     it("Assert receivers with unrestricted users should succeed", async () => {
-        await whitelist.assertReceivers({
+        await whitelist.assert_receivers({
             arg: {
-                addrs: [list0User2.pkh, list0User1.pkh]
+                addrs: [list0_user2.pkh, list0_user1.pkh]
             },
             as: whitelister.pkh
         });
@@ -478,9 +478,9 @@ describe("Assert receivers", async () => {
 describe("Assert transfers", async () => {
     it("Assert transfers [FROM: restriced, TO: restriced] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
-                    input_list: [[carl.pkh, [list2User1.pkh]]]
+                    input_list: [[carl.pkh, [list2_user1.pkh]]]
                 },
                 as: whitelister.pkh
             });
@@ -489,7 +489,7 @@ describe("Assert transfers", async () => {
 
     it("Assert transfers [FROM: not whitelisted, TO: not whitelisted] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
                     input_list: [[daniel.pkh, [eddy.pkh]]]
                 },
@@ -500,7 +500,7 @@ describe("Assert transfers", async () => {
 
     it("Assert transfers [FROM: restricted, TO: not whitelisted] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
                     input_list: [[carl.pkh, [eddy.pkh]]]
                 },
@@ -511,7 +511,7 @@ describe("Assert transfers", async () => {
 
     it("Assert transfers [FROM: not whitelisted, TO: restricted] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
                     input_list: [[eddy.pkh, [carl.pkh]]]
                 },
@@ -522,9 +522,9 @@ describe("Assert transfers", async () => {
 
     it("Assert transfers [FROM: whitelisted unrestricted, TO: restricted] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
-                    input_list: [[list0User1.pkh, [carl.pkh]]]
+                    input_list: [[list0_user1.pkh, [carl.pkh]]]
                 },
                 as: whitelister.pkh
             });
@@ -533,9 +533,9 @@ describe("Assert transfers", async () => {
 
     it("Assert transfers [FROM: whitelisted unrestricted, TO: not whitelisted] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
-                    input_list: [[list0User1.pkh, [eddy.pkh]]]
+                    input_list: [[list0_user1.pkh, [eddy.pkh]]]
                 },
                 as: whitelister.pkh
             });
@@ -544,9 +544,9 @@ describe("Assert transfers", async () => {
 
     it("Assert transfers [FROM: whitelisted unrestricted, TO: not in FROM allowed list] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
-                    input_list: [[list1User2.pkh, [list1User2.pkh]]]
+                    input_list: [[list1_user2.pkh, [list1_user2.pkh]]]
                 },
                 as: whitelister.pkh
             });
@@ -554,87 +554,87 @@ describe("Assert transfers", async () => {
     });
 
     it("Assert transfers [FROM: whitelisted unrestricted, TO: in FROM allowed list] should succeed", async () => {
-        await whitelist.assertTransfers({
+        await whitelist.assert_transfers({
             arg: {
-                input_list: [[list1User2.pkh, [list0User2.pkh]]]
+                input_list: [[list1_user2.pkh, [list0_user2.pkh]]]
             },
             as: whitelister.pkh
         });
     });
 
-    it("Assert transfers [FROM: not whitelisted, TO: not whitelisted, SENDER: SUPERUSER] should fail", async () => {
+    it("Assert transfers [FROM: not whitelisted, TO: not whitelisted, SENDER: super_user] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
                     input_list: [[jacky.pkh, [eddy.pkh]]]
                 },
-                as: superUser.pkh
+                as: super_user.pkh
             });
         }, errors.FROM_NOT_WHITELISTED)
     });
 
-    it("Assert transfers [FROM: whitelisted, TO: not whitelisted, SENDER: SUPERUSER] should fail", async () => {
+    it("Assert transfers [FROM: whitelisted, TO: not whitelisted, SENDER: super_user] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
-                    input_list: [[list1User2.pkh, [jacky.pkh]]]
+                    input_list: [[list1_user2.pkh, [jacky.pkh]]]
                 },
-                as: superUser.pkh
+                as: super_user.pkh
             });
         }, errors.TO_NOT_WHITELISTED)
     });
 
-    it("Assert transfers [FROM: restricted, TO: not whitelisted, SENDER: SUPERUSER] should fail", async () => {
+    it("Assert transfers [FROM: restricted, TO: not whitelisted, SENDER: super_user] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
                     input_list: [[carl.pkh, [jacky.pkh]]]
                 },
-                as: superUser.pkh
+                as: super_user.pkh
             });
         }, errors.TO_NOT_WHITELISTED)
     });
 
-    it("Assert transfers [FROM: not whitelisted, TO: restricted, SENDER: SUPERUSER] should fail", async () => {
+    it("Assert transfers [FROM: not whitelisted, TO: restricted, SENDER: super_user] should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
                     input_list: [[jacky.pkh, [carl.pkh]]]
                 },
-                as: superUser.pkh
+                as: super_user.pkh
             });
         }, errors.FROM_NOT_WHITELISTED)
     });
 
-    it("Assert transfers [FROM: unrestricted, TO: not in FROM allowed list, SENDER: SUPERUSER] should succeed", async () => {
+    it("Assert transfers [FROM: unrestricted, TO: not in FROM allowed list, SENDER: super_user] should succeed", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
-                    input_list: [[carl.pkh, [list1User2.pkh]]]
+                    input_list: [[carl.pkh, [list1_user2.pkh]]]
                 },
-                as: superUser.pkh
+                as: super_user.pkh
             });
         }, errors.FROM_RESTRICTED)
     });
 
-    it("Assert transfers [FROM: unrestricted, TO: restricted, SENDER: SUPERUSER] should succeed", async () => {
+    it("Assert transfers [FROM: unrestricted, TO: restricted, SENDER: super_user] should succeed", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransfers({
+            await whitelist.assert_transfers({
                 arg: {
-                    input_list: [[list1User2.pkh, [carl.pkh]]]
+                    input_list: [[list1_user2.pkh, [carl.pkh]]]
                 },
-                as: superUser.pkh
+                as: super_user.pkh
             });
         }, errors.TO_RESTRICTED)
 
     });
 
-    it("Assert transfers [FROM: whitelisted unrestricted, TO: in FROM allowed list, , SENDER: SUPERUSER] should succeed", async () => {
-        await whitelist.assertTransfers({
+    it("Assert transfers [FROM: whitelisted unrestricted, TO: in FROM allowed list, , SENDER: super_user] should succeed", async () => {
+        await whitelist.assert_transfers({
             arg: {
-                input_list: [[list1User2.pkh, [list0User2.pkh]]]
+                input_list: [[list1_user2.pkh, [list0_user2.pkh]]]
             },
-            as: superUser.pkh
+            as: super_user.pkh
         });
     });
 });
@@ -642,7 +642,7 @@ describe("Assert transfers", async () => {
 describe("Assert transfer list", async () => {
     it("Assert transfer list with non existing from transfer list should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransferlist({
+            await whitelist.assert_transfer_list({
                 arg: {
                     fromTransferListId: 666,
                     toTransferListId: 1
@@ -654,7 +654,7 @@ describe("Assert transfer list", async () => {
 
     it("Assert transfer list with non existing to transfer list should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransferlist({
+            await whitelist.assert_transfer_list({
                 arg: {
                     fromTransferListId: 1,
                     toTransferListId: 666
@@ -666,7 +666,7 @@ describe("Assert transfer list", async () => {
 
     it("Assert transfer list with restricted existing from transfer list should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransferlist({
+            await whitelist.assert_transfer_list({
                 arg: {
                     fromTransferListId: 2,
                     toTransferListId: 1
@@ -678,7 +678,7 @@ describe("Assert transfer list", async () => {
 
     it("Assert transfer list with restricted existing to transfer list should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransferlist({
+            await whitelist.assert_transfer_list({
                 arg: {
                     fromTransferListId: 1,
                     toTransferListId: 2
@@ -690,7 +690,7 @@ describe("Assert transfer list", async () => {
 
     it("Assert transfer list with to transfer list not in from allowed lists should fail", async () => {
         await expectToThrow(async () => {
-            await whitelist.assertTransferlist({
+            await whitelist.assert_transfer_list({
                 arg: {
                     fromTransferListId: 1,
                     toTransferListId: 1
@@ -701,7 +701,7 @@ describe("Assert transfer list", async () => {
     });
 
     it("Assert transfer list with to transfer list  in from allowed lists should succeed", async () => {
-        await whitelist.assertTransferlist({
+        await whitelist.assert_transfer_list({
             arg: {
                 fromTransferListId: 1,
                 toTransferListId: 0
